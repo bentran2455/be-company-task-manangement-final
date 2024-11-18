@@ -1,15 +1,20 @@
-var express = require("express");
+var aqp = require("api-query-params");
+const { validationResult } = require("express-validator");
 var User = require("../models/user");
+var aqp = require("api-query-params");
 
-// must check body for : existence, including name , name's value is a valid string.
 const createUser = async (req, res) => {
   const { name, role } = req.body;
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
   try {
     const newUser = await User.create({
       name,
       role,
     });
-    res.status(200).json({
+    res.status(201).json({
       message: "Success",
       user: newUser,
     });
@@ -20,38 +25,64 @@ const createUser = async (req, res) => {
         error: err._message,
         message: error[0],
       });
+    } else {
+      res.status(400).json({
+        message: err.message,
+      });
     }
   }
 };
 
 const getUsers = async (req, res) => {
+  const { filter } = aqp(req.query);
+  delete filter.page;
+  console.log(filter);
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const offset = page !== 1 ? limit * page : null;
   try {
-    const users = await User.find({}).limit(10);
+    const users = await User.find(filter)
+      .limit(limit)
+      .skip(offset)
+      .sort({ createdAt: -1, updatedAt: -1 })
+      .populate("tasks", { select: "name description status" });
     res.status(200).json({
       message: "Success",
       users: users,
+      page: page,
+      total: users.length,
     });
   } catch (err) {
     res.status(400).json({
-      message: "No user found",
+      message: err.message,
     });
   }
 };
 
-//Get user info by name
-const getUserByName = async (req, res) => {
-  const rqName = req.query.name;
+const getAllTasks = async (req, res) => {
+  if (!req.params.id) {
+    return res.status(500).json({
+      message: "User id is required",
+    });
+  }
   try {
-    const user = await User.find({ name: rqName }).limit(10);
+    const user = await User.findById(req.params.id).populate(
+      "tasks",
+      "name description status"
+    );
+    if (!user) {
+      throw new Error("No user found");
+    }
+    const tasks = user.tasks;
     res.status(200).json({
       message: "Success",
-      users: user,
+      tasks: tasks,
     });
   } catch (err) {
     res.status(400).json({
-      message: "No user found",
+      message: err.message,
     });
   }
 };
 
-module.exports = { createUser, getUsers, getUserByName };
+module.exports = { createUser, getUsers, getAllTasks };

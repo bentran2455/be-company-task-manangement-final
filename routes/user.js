@@ -3,16 +3,33 @@ var router = express.Router();
 const {
   createUser,
   getUsers,
-  getUserByName,
+  getAllTasks,
 } = require("../controllers/users.controllers");
+const { nameExistenceValidator } = require("../validator/users.errorHandles");
 
-//Create a new user with user's name
-router.post("/", createUser);
+/**
+ * @route POST api/users
+ * @description Create a new user
+ * @access public
+ * @requiredBody: name
+ * @checkExistence: true
+ */
+router.post("/", nameExistenceValidator, createUser);
 
-//Get all users with filters
+/**
+ * @route GET api/users
+ * @description Get all users with filters/searchs
+ * @access public
+ */
 router.get("/", getUsers);
 
-//	Search for an employee by name
-router.get("/:name", getUserByName);
+/**
+ * @route GET api/users/:id/task
+ * @description Get all tasks of a user
+ * @access public
+ * @requiredParam: id
+ * @Existence: false
+ */
+router.get("/:id/task", getAllTasks);
 
 module.exports = router;

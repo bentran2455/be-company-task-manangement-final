@@ -7,7 +7,7 @@ router.get("/", (req, res) => {
   res.sendFile("index.html", { root: "./public" });
 });
 
-router.use("/task", taskRouter);
-router.use("/user", userRouter);
+router.use("/tasks", taskRouter);
+router.use("/users", userRouter);
 
 module.exports = router;
