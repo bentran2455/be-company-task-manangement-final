@@ -9,9 +9,8 @@ const { nameExistenceValidator } = require("../validator/users.errorHandles");
 
 /**
  * @route POST api/users
- * @description Create a new user
+ * @description Create a new user/Sign up new account
  * @access public
- * @requiredBody: name
  * @checkExistence: true
  */
 router.post("/", nameExistenceValidator, createUser);

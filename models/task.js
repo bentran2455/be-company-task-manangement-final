@@ -6,18 +6,28 @@ const taskSchema = new Schema(
   {
     name: {
       type: String,
+      required: [true, "Task name required"],
     },
     status: {
       type: String,
       enum: {
         values: ["Pending", "Working", "Review", "Done", "Archive"],
-        message:
-          "{VALUE} is not a valid status among Pending, Working, Review, Done, Archive",
+        message: "{VALUE} is not a valid status",
       },
     },
     description: {
       type: String,
       required: [true, "Task description required"],
+    },
+    priority: {
+      type: String,
+      enum: {
+        values: ["Low", "Medium", "High", "Urgent"],
+        message: "{VALUE} is not a valid status",
+      },
+    },
+    deadline: {
+      type: Date,
     },
     assignee: {
       type: mongoose.Schema.Types.ObjectId,

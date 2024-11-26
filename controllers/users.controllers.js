@@ -1,25 +1,17 @@
 var aqp = require("api-query-params");
-const { validationResult } = require("express-validator");
 var User = require("../models/user");
-var aqp = require("api-query-params");
 
 const createUser = async (req, res) => {
-  const { name, role } = req.body;
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
+  const user = new User(req.body);
   try {
-    const newUser = await User.create({
-      name,
-      role,
-    });
+    const newUser = await user.save();
     res.status(201).json({
       message: "Success",
       user: newUser,
     });
   } catch (err) {
     if (err.name === "ValidationError") {
+      console.log("error");
       const error = Object.values(err.errors).map((err) => err.message);
       res.status(400).json({
         error: err._message,
