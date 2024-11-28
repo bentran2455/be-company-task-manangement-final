@@ -1,12 +1,10 @@
-var express = require("express");
-var router = express.Router();
-var taskRouter = require("./task");
-var userRouter = require("./user");
+const express = require("express");
+const router = express.Router();
+const taskRouter = require("./task");
+const userRouter = require("./user");
+const authRouter = require("./auth");
 
-router.get("/", (req, res) => {
-  res.sendFile("index.html", { root: "./public" });
-});
-
+router.use("/auth", authRouter);
 router.use("/tasks", taskRouter);
 router.use("/users", userRouter);
 

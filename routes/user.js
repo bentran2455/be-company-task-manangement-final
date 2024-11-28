@@ -1,29 +1,16 @@
 var express = require("express");
 var router = express.Router();
-const {
-  createUser,
-  getUsers,
-  getAllTasks,
-} = require("../controllers/users.controllers");
-const { nameExistenceValidator } = require("../validator/users.errorHandles");
+const { getUsers, getAllTasks } = require("../controllers/users.controllers");
 
 /**
- * @route POST api/users
- * @description Create a new user/Sign up new account
- * @access public
- * @checkExistence: true
- */
-router.post("/", nameExistenceValidator, createUser);
-
-/**
- * @route GET api/users
+ * @route GET users
  * @description Get all users with filters/searchs
  * @access public
  */
 router.get("/", getUsers);
 
 /**
- * @route GET api/users/:id/task
+ * @route GET users/:id/task
  * @description Get all tasks of a user
  * @access public
  * @requiredParam: id

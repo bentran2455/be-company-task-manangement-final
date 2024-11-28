@@ -1,29 +1,8 @@
 var aqp = require("api-query-params");
 var User = require("../models/user");
-
-const createUser = async (req, res) => {
-  const user = new User(req.body);
-  try {
-    const newUser = await user.save();
-    res.status(201).json({
-      message: "Success",
-      user: newUser,
-    });
-  } catch (err) {
-    if (err.name === "ValidationError") {
-      console.log("error");
-      const error = Object.values(err.errors).map((err) => err.message);
-      res.status(400).json({
-        error: err._message,
-        message: error[0],
-      });
-    } else {
-      res.status(400).json({
-        message: err.message,
-      });
-    }
-  }
-};
+// var jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
+const saltRounds = 8;
 
 const getUsers = async (req, res) => {
   const { filter } = aqp(req.query);
@@ -77,4 +56,4 @@ const getAllTasks = async (req, res) => {
   }
 };
 
-module.exports = { createUser, getUsers, getAllTasks };
+module.exports = { getUsers, getAllTasks };
