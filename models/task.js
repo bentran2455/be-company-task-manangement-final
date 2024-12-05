@@ -29,6 +29,9 @@ const taskSchema = new Schema(
     deadline: {
       type: Date,
     },
+    file: {
+      type: String,
+    },
     assignee: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

@@ -2,22 +2,23 @@ const { validationResult } = require("express-validator");
 var Task = require("../models/task");
 var User = require("../models/user");
 var aqp = require("api-query-params");
-
+const { uploadFile } = require("../services/UploadFile");
 const createTask = async (req, res) => {
-  const { name, status, description, assignee } = req.body;
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
+  const task = new Task(req.body);
+  // const errors = validationResult(req);
+  // if (!errors.isEmpty()) {
+  //   return res.status(400).json({ errors: errors.array() });
+  // }
   try {
-    const newTask = await Task.create({
-      name,
-      status,
-      description,
-      assignee,
-    });
+    if (req.files) {
+      const uploadResult = await uploadFile(req.files);
+      if (uploadResult.success === true) {
+        task.file = uploadResult.path;
+      }
+    }
+    const newTask = await task.save();
     res.status(201).json({
-      message: "Success",
+      success: true,
       task: newTask,
     });
   } catch (err) {
@@ -88,7 +89,7 @@ const getTaskById = async (req, res) => {
   }
 };
 
-const updateStatusOfTask = async (req, res) => {
+const updateTask = async (req, res) => {
   let newStatus = req.body.status;
   try {
     const rqTask = await Task.findById(req.params.id);
@@ -184,42 +185,11 @@ const assignTask = async (req, res) => {
   }
 };
 
-const unassignTask = async (req, res) => {
-  try {
-    const task = await Task.findById(req.params.id);
-    if (!task) {
-      throw new Error("Task not found");
-    }
-
-    const assignee = await User.findOne({ tasks: req.params.id });
-
-    if (task.assignee) {
-      task.assignee = null;
-      const index = assignee.tasks.indexOf(req.params.id);
-      assignee.tasks.splice(index, 1);
-    } else {
-      throw new Error("Task does not have assignee to unassign");
-    }
-
-    await task.save();
-    await assignee.save();
-    res.status(200).json({
-      message: "Success",
-      task: task,
-    });
-  } catch (err) {
-    res.status(400).json({
-      message: err.message,
-    });
-  }
-};
-
 module.exports = {
   createTask,
   getTasks,
   getTaskById,
-  updateStatusOfTask,
+  updateTask,
   deleteTask,
   assignTask,
-  unassignTask,
 };

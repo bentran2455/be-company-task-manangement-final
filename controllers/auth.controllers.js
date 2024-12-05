@@ -1,23 +1,29 @@
+require("dotenv").config();
+const fs = require("node:fs");
 const aqp = require("api-query-params");
 const User = require("../models/user");
 const Invitation = require("../models/invite");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const saltRounds = 8;
+const saltRounds = 6;
+const secretKey = process.env.SECRET_KEY;
 
-const signUp = async (req, res) => {
+const register = async (req, res) => {
   const user = new User(req.body);
   try {
+    const checkUser = await User.findOne({ email: user.email });
+    if (checkUser)
+      throw new Error("The account has been created for this email");
     const hashPw = await bcrypt.hash(user.password, saltRounds);
     user.password = hashPw;
     const newUser = await user.save();
-    res.status(201).json({
-      message: "Success",
+    res.status(200).json({
+      success: true,
+      message: "Successfully registered",
       user: newUser,
     });
   } catch (err) {
     if (err.name === "ValidationError") {
-      console.log("error");
       const error = Object.values(err.errors).map((err) => err.message);
       res.status(400).json({
         error: err._message,
@@ -38,46 +44,50 @@ const logIn = async (req, res) => {
     if (!doc) throw new Error("The email address has not been registered");
     const pwMatch = await bcrypt.compare(password, doc.password);
     if (!pwMatch) throw new Error("Incorrect password");
+    const token = jwt.sign({ _id: doc._id }, secretKey);
+    res.status(200).json({
+      success: true,
+      message: "Successfully logged in",
+      userInfo: {
+        _id: doc._id,
+        role: doc.role,
+      },
+      accessToken: token,
+    });
+  } catch (err) {
+    res.status(400).json({
+      message: err.message,
+    });
+  }
+};
+
+const sendInv = async (req, res) => {
+  const invitation = new Invitation(req.body);
+  try {
+    const checkSend = await Invitation.findOne({ email: invitation.email });
+    const checkUser = await User.findOne({ email: invitation.email });
+
+    if (checkSend) throw new Error("This email is already sent invitation");
+    if (checkUser)
+      throw new Error("The account has been created for this email");
+
+    const newInvitation = await invitation.save();
+
     res.status(201).json({
-      message: "Success",
-      userInfo: doc, // What should I return in userInfo?
+      message: "Request accepted",
+      data: newInvitation,
       token: jwt.sign(
         {
-          email: email,
-          password: password,
+          email: invitation.email,
         },
         "secret"
       ),
     });
   } catch (err) {
     res.status(400).json({
-      message: err.message,
+      message: `Request failed. ${err}`,
     });
   }
 };
 
-const invite = async (req, res) => {
-  const { email } = req.body;
-  try {
-    const checkSend = await Invitation.findOne({ email });
-    const checkUser = await User.findOne({ email });
-
-    if (checkSend) throw new Error("This email has already invited");
-    if (checkUser)
-      throw new Error("The account has been created for this email");
-
-    const newInvitation = await Invitation.create({
-      email: email,
-    });
-    res.status(200).json({
-      message: "Success send invitation",
-      data: newInvitation,
-    });
-  } catch (err) {
-    res.status(400).json({
-      message: err.message,
-    });
-  }
-};
-
-module.exports = { signUp, logIn, invite };
+module.exports = { register, logIn, sendInv };

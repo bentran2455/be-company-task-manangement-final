@@ -1,15 +1,14 @@
 var express = require("express");
 var router = express.Router();
 const { nameExistenceValidator } = require("../validator/tasks.errorHandles");
-
+const {verifyToken} from 
 const {
   createTask,
   getTasks,
   getTaskById,
-  updateStatusOfTask,
+  updateTask,
   deleteTask,
   assignTask,
-  unassignTask,
 } = require("../controllers/tasks.controllers");
 
 /**
@@ -26,7 +25,7 @@ router.post("/", nameExistenceValidator, createTask);
  * @description Get all tasks with filters/searchs
  * @access public
  */
-router.get("/", getTasks);
+router.get("/", verifyToken, getTasks);
 
 /**
  * @route GET api/tasks/:id
@@ -34,7 +33,7 @@ router.get("/", getTasks);
  * @access public
  * @requiredParam: id
  */
-router.get("/:id", getTaskById);
+router.get("/:id", verifyToken, getTaskById);
 
 /**
  * @route PUT api/tasks/:id
@@ -44,7 +43,7 @@ router.get("/:id", getTaskById);
  * @requiredParam: id
  * @extraRequirements: When status = done, it can't be changed to other value except archive
  */
-router.put("/:id", updateStatusOfTask);
+router.put("/:id", verifyToken, updateTask);
 
 /**
  * @route PATCH api/tasks/:id/assign
@@ -53,15 +52,7 @@ router.put("/:id", updateStatusOfTask);
  * @requiredBody: assignee
  * @requiredParam: id
  */
-router.patch("/:id/assign", assignTask);
-
-/**
- * @route PATCH api/tasks/:id/unassign
- * @description Unassign a task to a user
- * @access public
- * @requiredParam: id
- */
-router.patch("/:id/unassign", unassignTask);
+router.patch("/:id/assign", verifyToken, assignTask);
 
 /**
  * @route DELETE api/tasks/:id
@@ -69,6 +60,6 @@ router.patch("/:id/unassign", unassignTask);
  * @access public
  * @requiredParam: id
  */
-router.delete("/:id", deleteTask);
+router.delete("/:id", verifyToken, deleteTask);
 
 module.exports = router;

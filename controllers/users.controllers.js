@@ -1,8 +1,5 @@
 var aqp = require("api-query-params");
 var User = require("../models/user");
-// var jwt = require("jsonwebtoken");
-const bcrypt = require("bcrypt");
-const saltRounds = 8;
 
 const getUsers = async (req, res) => {
   const { filter } = aqp(req.query);
@@ -16,7 +13,8 @@ const getUsers = async (req, res) => {
       .limit(limit)
       .skip(offset)
       .sort({ createdAt: -1, updatedAt: -1 })
-      .populate("tasks", { select: "name description status" });
+      .populate("tasks", { select: "name description status" })
+      .select({ password: 0 });
     res.status(200).json({
       message: "Success",
       users: users,

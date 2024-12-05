@@ -1,12 +1,12 @@
 const mongoose = require("mongoose");
 const { Schema } = require("mongoose");
-var router = express.Router();
+var mongoose_delete = require("mongoose-delete");
 
 const projectSchema = new Schema(
   {
     name: {
       type: String,
-      required: [true, "Task description required"],
+      required: [true, "Project name is required"],
     },
     description: {
       type: String,
