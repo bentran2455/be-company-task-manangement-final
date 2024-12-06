@@ -1,22 +1,18 @@
 const { validationResult } = require("express-validator");
 var Task = require("../models/task");
-var User = require("../models/user");
 var aqp = require("api-query-params");
-const { uploadFile } = require("../services/UploadFile");
+
+// const errors = validationResult(req);
+// if (!errors.isEmpty()) {
+//   return res.status(400).json({ errors: errors.array() });
+// }
+
 const createTask = async (req, res) => {
-  const task = new Task(req.body);
-  // const errors = validationResult(req);
-  // if (!errors.isEmpty()) {
-  //   return res.status(400).json({ errors: errors.array() });
-  // }
   try {
-    if (req.files) {
-      const uploadResult = await uploadFile(req.files);
-      if (uploadResult.success === true) {
-        task.file = uploadResult.path;
-      }
-    }
+    const task = new Task(req.body);
+    task.isDeleted = false;
     const newTask = await task.save();
+    console.log("newTask", newTask);
     res.status(201).json({
       success: true,
       task: newTask,
@@ -37,13 +33,29 @@ const createTask = async (req, res) => {
 };
 
 const getTasks = async (req, res) => {
-  const { filter } = aqp(req.query);
-  delete filter.page;
+  const filters = aqp(req.query);
+  function clean(obj) {
+    for (var value in obj) {
+      if (obj[value] === "All" || obj[value] === "" || obj[value] === null) {
+        console.log("obj", obj);
+        delete obj[value];
+      } else if (obj.assigned === false) {
+        delete obj.assigned;
+        obj.assignee = { $exists: false };
+      } else if (obj.assigned === true) {
+        delete obj.assigned;
+        obj.assignee = { $exists: true };
+      }
+    }
+    return obj;
+  }
+  const cleanFilters = clean(filters.filter);
+  console.log("cleanFilters >>>", cleanFilters);
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
   const offset = page !== 1 ? limit * page : null;
   try {
-    const tasks = await Task.find(filter)
+    const tasks = await Task.find(cleanFilters)
       .limit(limit)
       .skip(offset)
       .sort({ createdAt: -1, updatedAt: -1 })
@@ -69,55 +81,32 @@ const getTasks = async (req, res) => {
   }
 };
 
-const getTaskById = async (req, res) => {
-  try {
-    const task = await Task.findById(req.params.id).populate(
-      "assignee",
-      "name"
-    );
-    if (!task) {
-      throw new Error("Task not found");
-    }
-    res.status(200).json({
-      message: "Success",
-      task: task,
-    });
-  } catch (err) {
-    res.status(400).json({
-      message: err.message,
-    });
-  }
-};
-
 const updateTask = async (req, res) => {
-  let newStatus = req.body.status;
+  let data = req.body;
+  console.log("data", data);
   try {
     const rqTask = await Task.findById(req.params.id);
     if (!rqTask) {
       throw new Error("Task not found");
     }
-    if (!newStatus) {
-      return res.status(200).json({
-        message: "Success",
-        task: rqTask,
-      });
-    }
-    if (rqTask.status === "Done" && newStatus !== "Archive") {
-      throw new Error(
-        "Done status cannot be changed to other value except Archive"
-      );
-    } else {
-      const updateTask = await Task.findByIdAndUpdate(
-        req.params.id,
-        { status: newStatus },
-        { new: true }
-      );
-      await updateTask.save();
-      res.status(200).json({
-        message: "Success",
-        "update task": updateTask,
-      });
-    }
+    const updatedTask = await Task.findByIdAndUpdate(
+      req.params.id,
+      {
+        name: data.name,
+        description: data.description,
+        status: data.status,
+        priority: data.priority,
+        assignee: data.assignee._id,
+        deadline: data.deadline,
+        file: data.file,
+      },
+      { new: true }
+    );
+    await updatedTask.save();
+    res.status(200).json({
+      success: true,
+      updatedTask: updatedTask,
+    });
   } catch (err) {
     res.status(400).json({
       message: err.message,
@@ -146,50 +135,9 @@ const deleteTask = async (req, res) => {
   }
 };
 
-const assignTask = async (req, res) => {
-  if (!req.body.assignee) {
-    return res.status(400).json({
-      message: "Assignee is required and cannot be empty",
-    });
-  }
-  try {
-    const user = await User.findById(req.body.assignee);
-    const task = await Task.findById(req.params.id);
-
-    if (!task) {
-      throw new Error("Task not found");
-    }
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    if (!task.assignee) {
-      task.assignee = req.body.assignee;
-      user.tasks.push(req.params.id);
-    } else {
-      throw new Error("Task is already assigned");
-    }
-
-    await task.populate("assignee", "name");
-    await user.populate("tasks", { select: "name description status" });
-    await task.save();
-    await user.save();
-    res.status(200).json({
-      message: "Success",
-      task: task,
-    });
-  } catch (err) {
-    res.status(400).json({
-      message: err.message,
-    });
-  }
-};
-
 module.exports = {
   createTask,
   getTasks,
-  getTaskById,
   updateTask,
   deleteTask,
-  assignTask,
 };

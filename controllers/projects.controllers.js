@@ -1,4 +1,3 @@
-var Task = require("../models/task");
 var Project = require("../models/project");
 var aqp = require("api-query-params");
 
@@ -52,16 +51,16 @@ const getProjects = async (req, res) => {
 
 const deleteProject = async (req, res) => {
   try {
-    const checkDelete = await Task.findById(req.params.id);
+    const checkDelete = await Project.findById(req.params.id);
     if (!checkDelete) {
-      throw new Error("Cannot find task ID");
+      throw new Error("Cannot find project ID");
     }
     if (checkDelete.deleted === true) {
-      throw new Error("The task is already deleted");
+      throw new Error("The project is already deleted");
     }
-    await Task.deleteById(req.params.id);
+    await Project.deleteById(req.params.id);
     res.status(200).json({
-      message: "Successfully deleted task",
+      message: "Successfully deleted project",
     });
   } catch (err) {
     console.log(err);
@@ -72,36 +71,25 @@ const deleteProject = async (req, res) => {
 };
 
 const updateProject = async (req, res) => {
-  if (!req.body.assignee) {
-    return res.status(400).json({
-      message: "Assignee is required and cannot be empty",
-    });
-  }
   try {
-    const user = await User.findById(req.body.assignee);
-    const task = await Task.findById(req.params.id);
-
-    if (!task) {
-      throw new Error("Task not found");
-    }
-    if (!user) {
-      throw new Error("User not found");
+    const project = await Project.findById(req.params.id);
+    if (!project) {
+      throw new Error("Project not found");
     }
 
-    if (!task.assignee) {
-      task.assignee = req.body.assignee;
-      user.tasks.push(req.params.id);
-    } else {
-      throw new Error("Task is already assigned");
+    if (req.body.name) project.name = req.body.name;
+    if (req.body.description) project.description = req.body.description;
+
+    if (req.body.tasks) {
+      project.tasks = req.body.tasks;
     }
 
-    await task.populate("assignee", "name");
-    await user.populate("tasks", { select: "name description status" });
-    await task.save();
-    await user.save();
+    const updatedProject = await project.save();
+    await updatedProject.populate("tasks");
+
     res.status(200).json({
       message: "Success",
-      task: task,
+      project: updatedProject,
     });
   } catch (err) {
     res.status(400).json({

@@ -16,7 +16,7 @@ app.use(
     },
     useTempFiles: true,
     tempFileDir: "/tmp/",
-    // debug: true,
+    debug: true,
     abortOnLimit: true,
     createParentPath: true,
   })
@@ -24,15 +24,17 @@ app.use(
 app.use(cors());
 app.use(logger("dev"));
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
 app.use("/", indexRouter);
-app.post("/upload-file", (req, res) => {
-  const file = req.files.file;
-  console.log(file);
-  res.status(200).send("File uploaded");
+app.post("/upload", (req, res) => {
+  const file = req.files;
+  const body = req.body;
+  console.log(file, "file");
+  console.log(body, "body");
+  res.status(200).send(file);
 });
 
 connection();
