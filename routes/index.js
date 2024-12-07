@@ -8,7 +8,7 @@ const { verifyRole, verifyToken } = require("../middleware/auth");
 
 router.use("/auth", authRouter);
 router.use("/tasks", verifyToken, taskRouter);
-router.use("/projects", verifyRole, projectRouter);
+router.use("/projects", projectRouter);
 router.use("/users", verifyToken, userRouter);
 
 module.exports = router;

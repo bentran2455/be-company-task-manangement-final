@@ -7,20 +7,31 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const saltRounds = 6;
 const secretKey = process.env.SECRET_KEY;
+const { Buffer } = require("node:buffer");
 
 const register = async (req, res) => {
   const user = new User(req.body);
+  let avatarString;
+  if (user.avatar) {
+    const isBuffer = Buffer.isBuffer(user.avatar);
+    avatarString = isBuffer
+      ? user.avatar.toString("base64")
+      : Buffer.from(user.avatar, "binary").toString("base64");
+    user.avatar = avatarString;
+  }
+
   try {
     const checkUser = await User.findOne({ email: user.email });
     if (checkUser)
       throw new Error("The account has been created for this email");
-    const hashPw = await bcrypt.hash(user.password, saltRounds);
+    const hashPw = bcrypt.hashSync(user.password, saltRounds);
     user.password = hashPw;
-    const newUser = await user.save();
+    await user.save();
+
     res.status(200).json({
       success: true,
       message: "Successfully registered",
-      user: newUser,
+      data: avatarString,
     });
   } catch (err) {
     if (err.name === "ValidationError") {
@@ -50,7 +61,10 @@ const logIn = async (req, res) => {
       message: "Successfully logged in",
       userInfo: {
         _id: doc._id,
+        name: doc.name,
         role: doc.role,
+        avatar: doc.avatar,
+        tasks: doc.tasks,
       },
       accessToken: token,
     });

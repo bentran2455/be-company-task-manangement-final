@@ -2,10 +2,18 @@ var Project = require("../models/project");
 var aqp = require("api-query-params");
 
 const createProject = async (req, res) => {
-  const project = new Project(req.body);
   try {
+    if (!req.body || Object.keys(req.body).length === 0) {
+      return res.status(400).json({
+        message: "Project data cannot be empty",
+      });
+    }
+
+    const project = new Project(req.body);
     const newProject = await project.save();
-    res.status(201).json({
+
+    return res.status(201).json({
+      success: true,
       message: "Success",
       newProject: newProject,
     });
@@ -88,6 +96,7 @@ const updateProject = async (req, res) => {
     await updatedProject.populate("tasks");
 
     res.status(200).json({
+      success: true,
       message: "Success",
       project: updatedProject,
     });

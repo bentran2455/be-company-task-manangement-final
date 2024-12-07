@@ -10,7 +10,6 @@ var aqp = require("api-query-params");
 const createTask = async (req, res) => {
   try {
     const task = new Task(req.body);
-    task.isDeleted = false;
     const newTask = await task.save();
     console.log("newTask", newTask);
     res.status(201).json({

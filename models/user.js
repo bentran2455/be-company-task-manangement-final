@@ -26,12 +26,10 @@ const userSchema = new Schema({
     enum: ["Manager", "Employee"],
     default: "Employee",
   },
-  tasks: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Task",
-    },
-  ],
+  avatar: {
+    type: Buffer,
+    default: "https://dummyimage.com/200x200/000/fff",
+  },
 });
 const User = mongoose.model("User", userSchema);
 
