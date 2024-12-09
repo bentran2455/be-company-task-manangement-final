@@ -7,18 +7,17 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const saltRounds = 6;
 const secretKey = process.env.SECRET_KEY;
-const { Buffer } = require("node:buffer");
 
 const register = async (req, res) => {
   const user = new User(req.body);
-  let avatarString;
-  if (user.avatar) {
-    const isBuffer = Buffer.isBuffer(user.avatar);
-    avatarString = isBuffer
-      ? user.avatar.toString("base64")
-      : Buffer.from(user.avatar, "binary").toString("base64");
-    user.avatar = avatarString;
-  }
+  // let avatarString;
+  // if (user.avatar) {
+  //   const isBuffer = Buffer.isBuffer(user.avatar);
+  //   avatarString = isBuffer
+  //     ? user.avatar.toString("base64")
+  //     : Buffer.from(user.avatar, "binary").toString("base64");
+  //   user.avatar = avatarString;
+  // }
 
   try {
     const checkUser = await User.findOne({ email: user.email });
@@ -31,7 +30,7 @@ const register = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Successfully registered",
-      data: avatarString,
+      // data: avatarString,
     });
   } catch (err) {
     if (err.name === "ValidationError") {

@@ -1,9 +1,14 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
-var mongoose_delete = require("mongoose-delete");
+const mongoose_delete = require("mongoose-delete");
+const Counter = require("./counter");
 
 const taskSchema = new Schema(
   {
+    id: {
+      type: Number,
+      unique: true,
+    },
     name: {
       type: String,
       required: [true, "Task name required"],
@@ -17,7 +22,6 @@ const taskSchema = new Schema(
     },
     description: {
       type: String,
-      required: [true, "Task description required"],
     },
     priority: {
       type: String,
@@ -47,6 +51,18 @@ const taskSchema = new Schema(
     timestamps: true,
   }
 );
+
+taskSchema.pre("save", async function (next) {
+  if (this.isNew) {
+    const counter = await Counter.findByIdAndUpdate(
+      "taskCounter",
+      { $inc: { sequence_value: 1 } },
+      { new: true, upsert: true }
+    );
+    this.id = counter.sequence_value;
+  }
+  next();
+});
 
 taskSchema.plugin(mongoose_delete);
 const Task = mongoose.model("Task", taskSchema);

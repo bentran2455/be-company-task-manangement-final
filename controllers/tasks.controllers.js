@@ -8,6 +8,7 @@ var aqp = require("api-query-params");
 // }
 
 const createTask = async (req, res) => {
+  console.log(">>>TASK>>>", req.body);
   try {
     const task = new Task(req.body);
     const newTask = await task.save();
@@ -80,6 +81,23 @@ const getTasks = async (req, res) => {
   }
 };
 
+const getTasksOfProject = async (req, res) => {
+  console.log(req.params.id);
+  try {
+    const tasks = await Task.find({ project: req.params.id })
+      .populate("assignee", "name")
+      .sort({ createdAt: -1, updatedAt: -1 });
+    res.status(200).json({
+      message: "Success",
+      tasks: tasks,
+    });
+  } catch (err) {
+    res.status(400).json({
+      message: err.message,
+    });
+  }
+};
+
 const updateTask = async (req, res) => {
   let data = req.body;
   console.log("data", data);
@@ -139,4 +157,5 @@ module.exports = {
   getTasks,
   updateTask,
   deleteTask,
+  getTasksOfProject,
 };

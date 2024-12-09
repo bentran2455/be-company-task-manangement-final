@@ -22,4 +22,5 @@ const verifyToken = async (req, res, next) => {
 };
 
 const verifyRole = async (req, res, next) => {};
+
 module.exports = { verifyToken, verifyRole };

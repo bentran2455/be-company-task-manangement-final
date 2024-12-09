@@ -13,7 +13,6 @@ const getUsers = async (req, res) => {
       .limit(limit)
       .skip(offset)
       .sort({ createdAt: -1, updatedAt: -1 })
-      .populate("tasks", { select: "name description status" })
       .select({ password: 0 });
     res.status(200).json({
       message: "Success",

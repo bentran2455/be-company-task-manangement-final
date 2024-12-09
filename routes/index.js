@@ -4,8 +4,7 @@ const taskRouter = require("./task");
 const projectRouter = require("./project");
 const userRouter = require("./user");
 const authRouter = require("./auth");
-const { verifyRole, verifyToken } = require("../middleware/auth");
-
+const { verifyToken } = require("../middleware/authorize");
 router.use("/auth", authRouter);
 router.use("/tasks", verifyToken, taskRouter);
 router.use("/projects", projectRouter);
