@@ -1,6 +1,7 @@
 const { validationResult } = require("express-validator");
-var Task = require("../models/task");
-var aqp = require("api-query-params");
+const Task = require("../models/task");
+const aqp = require("api-query-params");
+const Project = require("../models/project");
 
 // const errors = validationResult(req);
 // if (!errors.isEmpty()) {
@@ -8,11 +9,20 @@ var aqp = require("api-query-params");
 // }
 
 const createTask = async (req, res) => {
-  console.log(">>>TASK>>>", req.body);
+  const task = new Task(req.body);
+  const projectDoc = await Project.findById(req.body.project);
   try {
-    const task = new Task(req.body);
     const newTask = await task.save();
-    console.log("newTask", newTask);
+    if (projectDoc) {
+      console.log("projectDoc", projectDoc);
+      await Project.findByIdAndUpdate(
+        req.body.project,
+        { $push: { tasks: newTask._id } },
+        { new: true }
+      );
+    } else {
+      throw new Error("Project not found");
+    }
     res.status(201).json({
       success: true,
       task: newTask,
@@ -37,7 +47,6 @@ const getTasks = async (req, res) => {
   function clean(obj) {
     for (var value in obj) {
       if (obj[value] === "All" || obj[value] === "" || obj[value] === null) {
-        console.log("obj", obj);
         delete obj[value];
       } else if (obj.assigned === false) {
         delete obj.assigned;
@@ -50,7 +59,6 @@ const getTasks = async (req, res) => {
     return obj;
   }
   const cleanFilters = clean(filters.filter);
-  console.log("cleanFilters >>>", cleanFilters);
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
   const offset = page !== 1 ? limit * page : null;
@@ -59,7 +67,8 @@ const getTasks = async (req, res) => {
       .limit(limit)
       .skip(offset)
       .sort({ createdAt: -1, updatedAt: -1 })
-      .populate("assignee", "name");
+      .populate("assignee", { name: 1, email: 1 })
+      .populate("project", { name: 1 });
     res.status(200).json({
       message: "Success",
       tasks: tasks,
@@ -85,7 +94,7 @@ const getTasksOfProject = async (req, res) => {
   console.log(req.params.id);
   try {
     const tasks = await Task.find({ project: req.params.id })
-      .populate("assignee", "name")
+      .populate("assignee", { name: 1, email: 1 })
       .sort({ createdAt: -1, updatedAt: -1 });
     res.status(200).json({
       message: "Success",
@@ -109,13 +118,13 @@ const updateTask = async (req, res) => {
     const updatedTask = await Task.findByIdAndUpdate(
       req.params.id,
       {
-        name: data.name,
-        description: data.description,
-        status: data.status,
-        priority: data.priority,
-        assignee: data.assignee._id,
-        deadline: data.deadline,
-        file: data.file,
+        project: data.project || null,
+        name: data.name || null,
+        description: data.description || null,
+        status: data.status || null,
+        priority: data.priority || null,
+        assignee: data.assignee || null,
+        deadline: data.deadline || null,
       },
       { new: true }
     );

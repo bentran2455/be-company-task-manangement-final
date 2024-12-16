@@ -14,7 +14,7 @@ const invitationSchema = new Schema(
     },
     expireAt: {
       type: Date,
-      expires: 10,
+      expires: 3600,
     },
   },
   {

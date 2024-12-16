@@ -1,6 +1,10 @@
 var express = require("express");
 var router = express.Router();
-const { register, logIn, sendInv } = require("../controllers/auth.controllers");
+const {
+  register,
+  logIn,
+  reqAccess,
+} = require("../controllers/auth.controllers");
 
 /**
  * @route POST /users/register
@@ -17,11 +21,6 @@ router.post("/register", register);
  */
 router.post("/login", logIn);
 
-/**
- * @route POST auth/invite/
- * @description User submit sign up request
- * @access public
- */
-router.post("/send-invitation", sendInv);
+router.post("/request-access", reqAccess);
 
 module.exports = router;

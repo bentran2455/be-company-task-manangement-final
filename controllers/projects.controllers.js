@@ -1,5 +1,5 @@
-var Project = require("../models/project");
-var aqp = require("api-query-params");
+const Project = require("../models/project");
+const aqp = require("api-query-params");
 
 const createProject = async (req, res) => {
   try {

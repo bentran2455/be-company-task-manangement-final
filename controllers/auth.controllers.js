@@ -1,13 +1,11 @@
 require("dotenv").config();
-const fs = require("node:fs");
-const aqp = require("api-query-params");
 const User = require("../models/user");
 const Invitation = require("../models/invite");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const saltRounds = 6;
 const secretKey = process.env.SECRET_KEY;
-
+const { sendEmail } = require("../services/email.service");
 const register = async (req, res) => {
   const user = new User(req.body);
   // let avatarString;
@@ -52,7 +50,7 @@ const logIn = async (req, res) => {
   try {
     const doc = await User.findOne({ email });
     if (!doc) throw new Error("The email address has not been registered");
-    const pwMatch = await bcrypt.compare(password, doc.password);
+    const pwMatch = bcrypt.compare(password, doc.password);
     if (!pwMatch) throw new Error("Incorrect password");
     const token = jwt.sign({ _id: doc._id }, secretKey);
     res.status(200).json({
@@ -74,7 +72,7 @@ const logIn = async (req, res) => {
   }
 };
 
-const sendInv = async (req, res) => {
+const reqAccess = async (req, res) => {
   const invitation = new Invitation(req.body);
   try {
     const checkSend = await Invitation.findOne({ email: invitation.email });
@@ -85,16 +83,13 @@ const sendInv = async (req, res) => {
       throw new Error("The account has been created for this email");
 
     const newInvitation = await invitation.save();
-
+    // Send email:
+    sendEmail();
+    sendEmail(newInvitation.email);
     res.status(201).json({
-      message: "Request accepted",
+      message:
+        "Request accepted, please check your email for the registration link",
       data: newInvitation,
-      token: jwt.sign(
-        {
-          email: invitation.email,
-        },
-        "secret"
-      ),
     });
   } catch (err) {
     res.status(400).json({
@@ -103,4 +98,4 @@ const sendInv = async (req, res) => {
   }
 };
 
-module.exports = { register, logIn, sendInv };
+module.exports = { register, logIn, reqAccess };
