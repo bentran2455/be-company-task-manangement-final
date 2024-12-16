@@ -1,4 +1,5 @@
 require("dotenv").config();
+const fs = require("fs").promises;
 const User = require("../models/user");
 const Invitation = require("../models/invite");
 const jwt = require("jsonwebtoken");
@@ -6,29 +7,32 @@ const bcrypt = require("bcrypt");
 const saltRounds = 6;
 const secretKey = process.env.SECRET_KEY;
 const { sendEmail } = require("../services/email.service");
+
 const register = async (req, res) => {
   const user = new User(req.body);
-  // let avatarString;
-  // if (user.avatar) {
-  //   const isBuffer = Buffer.isBuffer(user.avatar);
-  //   avatarString = isBuffer
-  //     ? user.avatar.toString("base64")
-  //     : Buffer.from(user.avatar, "binary").toString("base64");
-  //   user.avatar = avatarString;
-  // }
-
   try {
+    if (req.file) {
+      // Read the file from the path
+      const fileBuffer = await fs.readFile(req.file.path);
+      user.avatar = fileBuffer;
+
+      // Optionally, delete the file from the uploads folder after reading
+      await fs.unlink(req.file.path);
+    }
     const checkUser = await User.findOne({ email: user.email });
     if (checkUser)
       throw new Error("The account has been created for this email");
     const hashPw = bcrypt.hashSync(user.password, saltRounds);
     user.password = hashPw;
-    await user.save();
-
+    const newUser = await user.save();
     res.status(200).json({
       success: true,
       message: "Successfully registered",
-      // data: avatarString,
+      user: {
+        email: newUser.email,
+        name: newUser.name,
+        role: newUser.role,
+      },
     });
   } catch (err) {
     if (err.name === "ValidationError") {
@@ -46,13 +50,24 @@ const register = async (req, res) => {
 };
 
 const logIn = async (req, res) => {
+  let imageUrl;
   const { email, password } = req.body;
   try {
     const doc = await User.findOne({ email });
     if (!doc) throw new Error("The email address has not been registered");
-    const pwMatch = bcrypt.compare(password, doc.password);
+    const pwMatch = await bcrypt.compare(password, doc.password);
     if (!pwMatch) throw new Error("Incorrect password");
     const token = jwt.sign({ _id: doc._id }, secretKey);
+    // if (doc.avatar) {
+    //   const response = await axios.get(doc.avatar, {
+    //     responseType: "arraybuffer",
+    //   });
+    //   const base64String = Buffer.from(response.data).toString("base64");
+    //   imageUrl = `data:image/jpeg;base64,${base64String}`;
+    // }
+    if (doc.avatar) {
+      imageUrl = `data:image/jpeg;base64,${doc.avatar.toString("base64")}`;
+    }
     res.status(200).json({
       success: true,
       message: "Successfully logged in",
@@ -60,7 +75,7 @@ const logIn = async (req, res) => {
         _id: doc._id,
         name: doc.name,
         role: doc.role,
-        avatar: doc.avatar,
+        avatar: imageUrl,
         tasks: doc.tasks,
       },
       accessToken: token,

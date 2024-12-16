@@ -1,5 +1,7 @@
-var express = require("express");
-var router = express.Router();
+const express = require("express");
+const router = express.Router();
+const multer = require("multer");
+const upload = multer({ dest: "uploads/" });
 const {
   register,
   logIn,
@@ -12,7 +14,7 @@ const {
  * @access public
  * @checkExistence: true
  */
-router.post("/register", register);
+router.post("/register", upload.single("avatar"), register);
 
 /**
  * @route POST users/login

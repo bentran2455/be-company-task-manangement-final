@@ -28,7 +28,6 @@ const userSchema = new Schema({
   },
   avatar: {
     type: Buffer,
-    default: "https://dummyimage.com/200x200/000/fff",
   },
 });
 const User = mongoose.model("User", userSchema);
